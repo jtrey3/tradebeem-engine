@@ -8,25 +8,28 @@ CAL_BASE = "https://api.cal.com/v2"
 
 def get_available_slots(api_key: str, event_type_id: int, start: str, end: str) -> list:
     """
-    Returns available slots between start and end (ISO 8601 strings).
-    Example: start="2026-03-12T00:00:00Z", end="2026-03-14T23:59:59Z"
+    Returns available slots between start and end.
+    start/end should be YYYY-MM-DD strings (e.g. "2026-03-12").
     """
+    # Strip time component if passed as ISO datetime
+    start_date = start[:10] if start else ""
+    end_date = end[:10] if end else ""
     headers = {"Authorization": f"Bearer {api_key}", "cal-api-version": "2024-09-04"}
     params = {
         "eventTypeId": event_type_id,
-        "start": start,
-        "end": end,
+        "start": start_date,
+        "end": end_date,
     }
-    resp = httpx.get(f"{CAL_BASE}/slots/available", headers=headers, params=params, timeout=10)
+    resp = httpx.get(f"{CAL_BASE}/slots", headers=headers, params=params, timeout=10)
     logger.info(f"Cal slots response {resp.status_code}: {resp.text[:500]}")
     resp.raise_for_status()
     data = resp.json()
-    # Flatten the date-keyed dict into a list of slot strings
-    slots_by_date = data.get("data", {}).get("slots", {})
+    # Flatten the date-keyed dict into a list of slot start times
+    slots_by_date = data.get("data", {})
     flat = []
-    for date, slot_list in slots_by_date.items():
+    for date_key, slot_list in slots_by_date.items():
         for slot in slot_list:
-            flat.append(slot.get("time", ""))
+            flat.append(slot.get("start", ""))
     return [s for s in flat if s]
 
 

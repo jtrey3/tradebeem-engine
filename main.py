@@ -286,8 +286,8 @@ async def cal_slots(client_id: str, request: Request):
     end = params.get("end") or ""
     date = params.get("date") or ""
     if date and (not start or not end):
-        start = f"{date}T00:00:00Z"
-        end = f"{date}T23:59:59Z"
+        start = date
+        end = date
 
     logger.info(f"[{client_id}] cal/slots called with start={start} end={end} date={date}")
 
