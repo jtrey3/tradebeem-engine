@@ -1,5 +1,5 @@
 import logging
-from core.supabase_db import insert_record, search_records
+from core.supabase_db import insert_record, find_record_by_field
 from handlers.actions import send_sms, send_email
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ def handle_retell_post_call(payload: dict, client: dict):
     call_analysis = call.get("call_analysis") or payload.get("call_analysis") or {}
     logger.info(f"[{client['client_id']}] call_analysis keys: {list(call_analysis.keys()) if call_analysis else 'EMPTY'}")
     custom_analysis = call_analysis.get("custom_analysis_data", {})
+    logger.info(f"[{client['client_id']}] custom_analysis_data: {custom_analysis}")
 
     caller_name = custom_analysis.get("caller_name", "")
     phone = call.get("from_number", custom_analysis.get("phone_number", ""))
@@ -78,11 +79,10 @@ def handle_retell_post_call(payload: dict, client: dict):
 
     # Prevent duplicate inserts for same call_id
     if call_id:
-        existing = search_records(sb["url"], sb["key"], sb["table"])
-        for rec in existing:
-            if rec.get("fields", {}).get("call_id") == call_id or rec.get("call_id") == call_id:
-                logger.info(f"[{client['client_id']}] Duplicate call_id {call_id}, skipping insert")
-                return
+        existing = find_record_by_field(sb["url"], sb["key"], sb["table"], "call_id", call_id)
+        if existing:
+            logger.info(f"[{client['client_id']}] Duplicate call_id {call_id}, skipping insert")
+            return
 
     try:
         record_id = insert_record(sb["url"], sb["key"], sb["table"], fields)

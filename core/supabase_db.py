@@ -31,6 +31,13 @@ def update_record(url: str, key: str, table: str, record_id: str, fields: dict):
     client.table(table).update(mapped).eq("id", record_id).execute()
 
 
+def find_record_by_field(url: str, key: str, table: str, field: str, value: str) -> dict | None:
+    """Return the first record matching field=value, or None."""
+    client = get_client(url, key)
+    resp = client.table(table).select("id").eq(field, value).limit(1).execute()
+    return resp.data[0] if resp.data else None
+
+
 def get_raw_records(url: str, key: str, table: str) -> list:
     """Return all records as raw dicts, ordered by timestamp desc."""
     client = get_client(url, key)
