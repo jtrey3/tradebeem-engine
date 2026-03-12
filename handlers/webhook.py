@@ -10,6 +10,8 @@ def handle_retell_post_call(payload: dict, client: dict):
     sb = client["supabase"]
     twilio = client["twilio"]
 
+    logger.info(f"[{client['client_id']}] Raw webhook payload keys: {list(payload.keys())}")
+    logger.info(f"[{client['client_id']}] call_analysis: {payload.get('call_analysis')}")
     call = payload.get("call", {})
     call_analysis = payload.get("call_analysis", {})
     custom_analysis = call_analysis.get("custom_analysis_data", {})
