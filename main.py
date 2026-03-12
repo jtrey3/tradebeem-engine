@@ -309,7 +309,7 @@ async def cal_book(client_id: str, request: Request):
     booking = create_booking(
         cal["api_key"],
         cal["event_type_id"],
-        body["start"],
+        body.get("start_time") or body.get("start"),
         body["name"],
         body.get("email"),
         body.get("timezone", "America/Chicago"),
