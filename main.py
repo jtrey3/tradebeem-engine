@@ -297,6 +297,81 @@ async def cal_book(client_id: str, request: Request):
     return {"status": "booked", "booking": booking}
 
 
+# ── Job Lookup Tool (called by Retell agent during live calls) ─────────────────
+
+@app.get("/tools/{client_id}/lookup-job")
+def lookup_job(client_id: str, phone: str = None, name: str = None):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    sb = client["supabase"]
+    records = get_raw_records(sb["url"], sb["key"], sb["table"])
+
+    match = None
+    for rec in records:
+        if phone and rec.get("phone", "").replace(" ", "").replace("-", "") in phone.replace(" ", "").replace("-", ""):
+            match = rec
+            break
+        if name and name.lower() in (rec.get("caller_name") or "").lower():
+            match = rec
+            break
+
+    if not match:
+        return {"found": False, "message": "No job found for that customer."}
+
+    return {
+        "found": True,
+        "name": match.get("caller_name"),
+        "vehicle": match.get("vehicle"),
+        "status": match.get("status"),
+        "issue": match.get("issue"),
+        "work_performed": match.get("work_performed") or "Not yet documented",
+    }
+
+
+# ── Job Lookup Tool (called by Retell agent during live calls) ─────────────────
+
+@app.get("/tools/{client_id}/lookup-job")
+def lookup_job(client_id: str, phone: str = None, name: str = None):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    sb = client["supabase"]
+    records = get_raw_records(sb["url"], sb["key"], sb["table"])
+
+    match = None
+    for rec in records:
+        if phone and rec.get("phone", "").replace(" ", "").replace("-", "") in phone.replace(" ", "").replace("-", ""):
+            match = rec
+            break
+        if name and name.lower() in (rec.get("caller_name") or "").lower():
+            match = rec
+            break
+
+    if not match:
+        return {"found": False, "message": "No job found for that customer."}
+
+    return {
+        "found": True,
+        "name": match.get("caller_name"),
+        "vehicle": match.get("vehicle"),
+        "status": match.get("status"),
+        "issue": match.get("issue"),
+        "work_performed": match.get("work_performed") or "Not yet documented",
+    }
+
+
+@app.get("/tools/{client_id}/todays-date")
+def todays_date(client_id: str):
+    from datetime import date
+    today = date.today()
+    return {
+        "date": today.isoformat(),
+        "formatted": today.strftime("%A, %B %d, %Y"),
+        "day_of_week": today.strftime("%A"),
+    }
+
+
 # ── Webhook endpoints ──────────────────────────────────────────────────────────
 
 @app.post("/webhook/{client_id}/retell-post-call")
