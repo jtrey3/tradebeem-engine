@@ -19,8 +19,8 @@ def send_sms(account_sid: str, auth_token: str, from_number: str, to_number: str
 
 def send_email(to: str, subject: str, body: str, sender_email: str = None):
     """Send email via Gmail SMTP using app password from env."""
-    gmail_user = sender_email or os.getenv("GMAIL_USER")
-    gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
+    gmail_user = sender_email or os.getenv("GMAIL_USER") or "tyb.447@gmail.com"
+    gmail_pass = os.getenv("GMAIL_APP_PASSWORD") or "esiiOsfaycodhvkv"
 
     if not gmail_user or not gmail_pass:
         raise ValueError("GMAIL_USER and GMAIL_APP_PASSWORD must be set in environment")
