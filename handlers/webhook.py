@@ -1,5 +1,5 @@
 import logging
-from core.supabase_db import insert_record
+from core.supabase_db import insert_record, search_records
 from handlers.actions import send_sms, send_email
 
 logger = logging.getLogger(__name__)
@@ -68,6 +68,14 @@ def handle_retell_post_call(payload: dict, client: dict):
     }
 
     fields = {k: v for k, v in fields.items() if v not in (None, "", 0)}
+
+    # Prevent duplicate inserts for same call_id
+    if call_id:
+        existing = search_records(sb["url"], sb["key"], sb["table"])
+        for rec in existing:
+            if rec.get("fields", {}).get("call_id") == call_id or rec.get("call_id") == call_id:
+                logger.info(f"[{client['client_id']}] Duplicate call_id {call_id}, skipping insert")
+                return
 
     try:
         record_id = insert_record(sb["url"], sb["key"], sb["table"], fields)
