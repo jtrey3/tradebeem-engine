@@ -297,39 +297,7 @@ async def cal_book(client_id: str, request: Request):
     return {"status": "booked", "booking": booking}
 
 
-# ── Job Lookup Tool (called by Retell agent during live calls) ─────────────────
-
-@app.get("/tools/{client_id}/lookup-job")
-def lookup_job(client_id: str, phone: str = None, name: str = None):
-    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    sb = client["supabase"]
-    records = get_raw_records(sb["url"], sb["key"], sb["table"])
-
-    match = None
-    for rec in records:
-        if phone and rec.get("phone", "").replace(" ", "").replace("-", "") in phone.replace(" ", "").replace("-", ""):
-            match = rec
-            break
-        if name and name.lower() in (rec.get("caller_name") or "").lower():
-            match = rec
-            break
-
-    if not match:
-        return {"found": False, "message": "No job found for that customer."}
-
-    return {
-        "found": True,
-        "name": match.get("caller_name"),
-        "vehicle": match.get("vehicle"),
-        "status": match.get("status"),
-        "issue": match.get("issue"),
-        "work_performed": match.get("work_performed") or "Not yet documented",
-    }
-
-
-# ── Job Lookup Tool (called by Retell agent during live calls) ─────────────────
+# ── Misc Tools (called by Retell agent during live calls) ──────────────────────
 
 @app.get("/tools/{client_id}/lookup-job")
 def lookup_job(client_id: str, phone: str = None, name: str = None):
@@ -370,6 +338,38 @@ def todays_date(client_id: str):
         "formatted": today.strftime("%A, %B %d, %Y"),
         "day_of_week": today.strftime("%A"),
     }
+
+
+@app.post("/tools/{client_id}/send-photo-link")
+async def send_photo_link(client_id: str, request: Request):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    body = await request.json()
+    phone = body.get("phone", "")
+    name = body.get("name", "there")
+    record_id = body.get("record_id", "")
+    first_name = name.split()[0] if name else "there"
+
+    photo_url = (
+        f"https://johnc3.app.n8n.cloud/webhook/photo-upload"
+        f"?record_id={record_id}&name={name}&phone={phone}"
+    )
+
+    twilio = client["twilio"]
+    from handlers.actions import send_sms
+    try:
+        send_sms(
+            twilio["account_sid"], twilio["auth_token"], twilio["from_number"],
+            phone,
+            f"Hey {first_name}, here's a link to upload photos of your truck or dash codes — "
+            f"it helps our team get a head start: {photo_url}"
+        )
+        logger.info(f"[{client_id}] Photo link SMS sent to {phone}")
+        return {"status": "sent"}
+    except Exception as e:
+        logger.error(f"[{client_id}] Photo link SMS failed: {e}")
+        return {"status": "failed", "error": str(e)}
 
 
 # ── Webhook endpoints ──────────────────────────────────────────────────────────
