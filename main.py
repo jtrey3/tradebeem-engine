@@ -298,7 +298,9 @@ async def cal_slots(client_id: str, request: Request):
 
     cal = client.get("cal", {})
     slots = get_available_slots(cal["api_key"], cal["event_type_id"], start, end)
-    return {"slots": slots}
+    if not slots:
+        return {"slots": [], "message": "No availability on that date. Ask the customer for a different date and check again."}
+    return {"slots": slots, "message": f"Available times on {start[:10]}: {', '.join(slots)}"}
 
 
 @app.post("/tools/{client_id}/cal/book")
