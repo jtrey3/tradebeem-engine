@@ -279,7 +279,9 @@ async def cal_slots(client_id: str, request: Request):
     if request.method == "POST":
         try:
             body = await request.json()
-            params.update(body)
+            # Retell sends args nested under "args" when args_at_root=false
+            args = body.get("args", body)
+            params.update(args)
         except Exception:
             pass
 
