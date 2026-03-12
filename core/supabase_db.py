@@ -17,22 +17,7 @@ def search_records(url: str, key: str, table: str, status_filter: str = None) ->
     for row in rows:
         record_id = row.get("id")
         fields = {k: v for k, v in row.items() if k != "id"}
-        # Map snake_case columns back to the field names pollers use
-        normalized = {
-            "Caller Name": fields.get("caller_name", ""),
-            "Phone": fields.get("phone", ""),
-            "Email": fields.get("email", ""),
-            "Vehicle": fields.get("vehicle", ""),
-            "Engine": fields.get("engine", ""),
-            "Status": fields.get("status", ""),
-            "work_performed": fields.get("work_performed", ""),
-            "declined_work": fields.get("declined_work", ""),
-            "pickup_notification_sent": fields.get("pickup_notification_sent", False),
-            "complete_notification_sent": fields.get("complete_notification_sent", False),
-            "review_requested": fields.get("review_requested", False),
-            "declined_followup_sent": fields.get("declined_followup_sent", False),
-        }
-        records.append({"id": record_id, "fields": normalized})
+        records.append({"id": record_id, "fields": fields})
 
     return records
 
@@ -42,17 +27,7 @@ def update_record(url: str, key: str, table: str, record_id: str, fields: dict):
     client = get_client(url, key)
 
     # Map any display-name keys to snake_case columns
-    column_map = {
-        "pickup_notification_sent": "pickup_notification_sent",
-        "complete_notification_sent": "complete_notification_sent",
-        "review_requested": "review_requested",
-        "declined_followup_sent": "declined_followup_sent",
-        "Status": "status",
-        "work_performed": "work_performed",
-        "declined_work": "declined_work",
-    }
-
-    mapped = {column_map.get(k, k): v for k, v in fields.items()}
+    mapped = fields
     client.table(table).update(mapped).eq("id", record_id).execute()
 
 

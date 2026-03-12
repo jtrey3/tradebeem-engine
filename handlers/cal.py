@@ -14,10 +14,11 @@ def get_available_slots(api_key: str, event_type_id: int, start: str, end: str) 
     headers = {"Authorization": f"Bearer {api_key}", "cal-api-version": "2024-09-04"}
     params = {
         "eventTypeId": event_type_id,
-        "startTime": start,
-        "endTime": end,
+        "start": start,
+        "end": end,
     }
     resp = httpx.get(f"{CAL_BASE}/slots/available", headers=headers, params=params, timeout=10)
+    logger.info(f"Cal slots response {resp.status_code}: {resp.text[:500]}")
     resp.raise_for_status()
     data = resp.json()
     # Flatten the date-keyed dict into a list of slot strings
@@ -29,7 +30,7 @@ def get_available_slots(api_key: str, event_type_id: int, start: str, end: str) 
     return [s for s in flat if s]
 
 
-def create_booking(api_key: str, event_type_id: int, start: str, name: str, email: str, timezone: str = "America/Chicago") -> dict:
+def create_booking(api_key: str, event_type_id: int, start: str, name: str, email: str = None, timezone: str = "America/Chicago") -> dict:
     """
     Books a slot. start is ISO 8601 e.g. "2026-03-13T10:00:00Z"
     Returns the booking object.
@@ -44,10 +45,11 @@ def create_booking(api_key: str, event_type_id: int, start: str, name: str, emai
         "start": start,
         "attendee": {
             "name": name,
-            "email": email,
+            "email": email or "noemail@placeholder.com",
             "timeZone": timezone,
         },
     }
     resp = httpx.post(f"{CAL_BASE}/bookings", headers=headers, json=payload, timeout=10)
+    logger.info(f"Cal booking response {resp.status_code}: {resp.text[:500]}")
     resp.raise_for_status()
     return resp.json().get("data", {})

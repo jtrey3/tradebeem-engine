@@ -7,13 +7,18 @@ logger = logging.getLogger(__name__)
 
 def handle_retell_post_call(payload: dict, client: dict):
     """Process Retell AI post-call webhook and log to Supabase + send notifications."""
+    event = payload.get("event")
+    if event != "call_analyzed":
+        logger.info(f"[{client['client_id']}] Ignoring event: {event}")
+        return
+
     sb = client["supabase"]
     twilio = client["twilio"]
 
     logger.info(f"[{client['client_id']}] Raw webhook payload keys: {list(payload.keys())}")
-    logger.info(f"[{client['client_id']}] call_analysis: {payload.get('call_analysis')}")
     call = payload.get("call", {})
-    call_analysis = payload.get("call_analysis", {})
+    call_analysis = call.get("call_analysis") or payload.get("call_analysis") or {}
+    logger.info(f"[{client['client_id']}] call_analysis keys: {list(call_analysis.keys()) if call_analysis else 'EMPTY'}")
     custom_analysis = call_analysis.get("custom_analysis_data", {})
 
     caller_name = custom_analysis.get("caller_name", "")

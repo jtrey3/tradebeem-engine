@@ -23,15 +23,15 @@ def run_pickup_notification(client: dict):
     records = search_records(url, key, table)
     for rec in records:
         f = _fields(rec)
-        if f.get("Status") != cfg["trigger_status"]:
+        if f.get("status") != cfg["trigger_status"]:
             continue
         if f.get(cfg["sent_flag"]):
             continue
 
-        name = f.get("Caller Name", "Customer")
-        vehicle = f.get("Vehicle", "your vehicle")
-        phone = f.get("Phone", "")
-        email = f.get("Email", "")
+        name = f.get("caller_name", "Customer")
+        vehicle = f.get("vehicle", "your vehicle")
+        phone = f.get("phone", "")
+        email = f.get("email", "")
         shop = client["name"]
         shop_phone = client["phone"]
 
@@ -90,14 +90,14 @@ def run_complete_notification(client: dict):
     records = search_records(url, key, table)
     for rec in records:
         f = _fields(rec)
-        if f.get("Status") != cfg["trigger_status"]:
+        if f.get("status") != cfg["trigger_status"]:
             continue
         if f.get(cfg["sent_flag"]):
             continue
 
-        name = f.get("Caller Name", "Customer")
-        vehicle = f.get("Vehicle", "your vehicle")
-        email = f.get("Email", "")
+        name = f.get("caller_name", "Customer")
+        vehicle = f.get("vehicle", "your vehicle")
+        email = f.get("email", "")
         shop = client["name"]
         shop_phone = client["phone"]
 
@@ -133,16 +133,16 @@ def run_google_review(client: dict):
     records = search_records(url, key, table)
     for rec in records:
         f = _fields(rec)
-        if f.get("Status") != cfg["trigger_status"]:
+        if f.get("status") != cfg["trigger_status"]:
             continue
         if f.get(cfg["sent_flag"]):
             continue
         if not f.get(cfg["required_field"]):
             continue
 
-        name = f.get("Caller Name", "Customer")
-        vehicle = f.get("Vehicle", "your vehicle")
-        email = f.get("Email", "")
+        name = f.get("caller_name", "Customer")
+        vehicle = f.get("vehicle", "your vehicle")
+        email = f.get("email", "")
         shop = client["name"]
         review_link = client["google_review_link"]
 
@@ -181,7 +181,7 @@ def run_declined_followup(client: dict):
     records = search_records(url, key, table)
     for rec in records:
         f = _fields(rec)
-        if f.get("Status") != cfg["trigger_status"]:
+        if f.get("status") != cfg["trigger_status"]:
             continue
         if f.get(cfg["sent_flag"]):
             continue
@@ -189,9 +189,9 @@ def run_declined_followup(client: dict):
         if not declined:
             continue
 
-        name = f.get("Caller Name", "Customer")
-        vehicle = f.get("Vehicle", "your vehicle")
-        email = f.get("Email", "")
+        name = f.get("caller_name", "Customer")
+        vehicle = f.get("vehicle", "your vehicle")
+        email = f.get("email", "")
         shop = client["name"]
         shop_phone = client["phone"]
 

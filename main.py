@@ -290,7 +290,7 @@ async def cal_book(client_id: str, request: Request):
         cal["event_type_id"],
         body["start"],
         body["name"],
-        body["email"],
+        body.get("email"),
         body.get("timezone", "America/Chicago"),
     )
     logger.info(f"[{client_id}] Cal.com booking created: {booking.get('uid')}")
