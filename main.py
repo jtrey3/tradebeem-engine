@@ -268,11 +268,15 @@ def leads_update(
 
 # ── Cal.com Tools (called by Retell agent during live calls) ───────────────────
 
-@app.get("/tools/{client_id}/cal/slots")
-def cal_slots(client_id: str, start: str, end: str):
+@app.api_route("/tools/{client_id}/cal/slots", methods=["GET", "POST"])
+async def cal_slots(client_id: str, request: Request, start: str = None, end: str = None):
     client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+    if request.method == "POST":
+        body = await request.json()
+        start = start or body.get("start")
+        end = end or body.get("end")
     cal = client.get("cal", {})
     slots = get_available_slots(cal["api_key"], cal["event_type_id"], start, end)
     return {"slots": slots}
@@ -329,7 +333,7 @@ def lookup_job(client_id: str, phone: str = None, name: str = None):
     }
 
 
-@app.get("/tools/{client_id}/todays-date")
+@app.api_route("/tools/{client_id}/todays-date", methods=["GET", "POST"])
 def todays_date(client_id: str):
     from datetime import date
     today = date.today()
