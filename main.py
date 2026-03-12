@@ -311,6 +311,8 @@ async def cal_book(client_id: str, request: Request):
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     body = await request.json()
+    # Retell sends args nested under "args" when args_at_root=false
+    body = body.get("args", body)
     cal = client.get("cal", {})
     booking = create_booking(
         cal["api_key"],
