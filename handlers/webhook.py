@@ -23,8 +23,8 @@ def handle_retell_post_call(payload: dict, client: dict):
     logger.info(f"[{client['client_id']}] custom_analysis_data: {custom_analysis}")
 
     caller_name = custom_analysis.get("caller_name", "")
-    phone = call.get("from_number", custom_analysis.get("phone_number", ""))
-    email = custom_analysis.get("email", "")
+    phone = call.get("from_number", "") or custom_analysis.get("caller_phone", "")
+    email = custom_analysis.get("caller_email", "")
     company = custom_analysis.get("company_name", "")
     vehicle_year = custom_analysis.get("vehicle_year", "")
     vehicle_make = custom_analysis.get("vehicle_make", "")
@@ -36,11 +36,10 @@ def handle_retell_post_call(payload: dict, client: dict):
     fault_codes = custom_analysis.get("fault_codes", "")
     is_drivable = custom_analysis.get("is_drivable", "unknown")
     urgency = custom_analysis.get("urgency", "medium")
-    scheduling = custom_analysis.get("preferred_schedule", "")
+    scheduling = custom_analysis.get("scheduling_preference", "")
     call_type = custom_analysis.get("call_type", "repair")
-    bucket = custom_analysis.get("bucket", "shop_service")
-    is_new = custom_analysis.get("is_new_customer", True)
-    summary = call_analysis.get("call_summary", "")
+    bucket = custom_analysis.get("call_bucket", "shop_service")
+    summary = custom_analysis.get("call_summary", "") or call_analysis.get("call_summary", "")
     duration = call.get("duration_ms", 0) // 1000
     call_id = call.get("call_id", "")
     timestamp = call.get("start_timestamp", "")
@@ -65,7 +64,6 @@ def handle_retell_post_call(payload: dict, client: dict):
         "scheduling": scheduling,
         "call_type": call_type,
         "bucket": bucket,
-        "is_new_customer": is_new,
         "summary": summary,
         "duration_s": duration,
         "call_id": call_id,
