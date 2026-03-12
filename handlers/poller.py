@@ -120,6 +120,20 @@ def run_complete_notification(client: dict):
                 logger.error(f"[{client['client_id']}] Complete email failed: {e}")
                 log_event(client['client_id'], f"Complete email failed: {e}", "ERROR")
 
+        if email:
+            try:
+                send_email(
+                    to=client["owner_email"],
+                    subject=f"AUTO: Completion email sent to {name}",
+                    body=(
+                        f"Completion notification was sent to {name} ({email}) "
+                        f"for their {vehicle}."
+                    ),
+                    sender_email=client["gmail_sender"]
+                )
+            except Exception as e:
+                logger.error(f"[{client['client_id']}] Owner complete email failed: {e}")
+
         try:
             update_record(url, key, table, rec["id"], {cfg["sent_flag"]: True})
         except Exception as e:
@@ -164,6 +178,18 @@ def run_google_review(client: dict):
                 )
                 logger.info(f"[{client['client_id']}] Review email sent to {name} ({email})")
                 log_event(client['client_id'], f"Google review email sent to {name} ({email})")
+                try:
+                    send_email(
+                        to=client["owner_email"],
+                        subject=f"AUTO: Google review request sent to {name}",
+                        body=(
+                            f"A Google review request was sent to {name} ({email}) "
+                            f"for their {vehicle}."
+                        ),
+                        sender_email=client["gmail_sender"]
+                    )
+                except Exception as e:
+                    logger.error(f"[{client['client_id']}] Owner review email failed: {e}")
             except Exception as e:
                 logger.error(f"[{client['client_id']}] Review email failed: {e}")
                 log_event(client['client_id'], f"Review email failed: {e}", "ERROR")
