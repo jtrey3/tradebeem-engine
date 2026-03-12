@@ -269,14 +269,19 @@ def leads_update(
 # ── Cal.com Tools (called by Retell agent during live calls) ───────────────────
 
 @app.api_route("/tools/{client_id}/cal/slots", methods=["GET", "POST"])
-async def cal_slots(client_id: str, request: Request, start: str = None, end: str = None):
+async def cal_slots(client_id: str, request: Request):
     client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+    params = dict(request.query_params)
     if request.method == "POST":
-        body = await request.json()
-        start = start or body.get("start")
-        end = end or body.get("end")
+        try:
+            body = await request.json()
+            params.update(body)
+        except Exception:
+            pass
+    start = params.get("start")
+    end = params.get("end")
     cal = client.get("cal", {})
     slots = get_available_slots(cal["api_key"], cal["event_type_id"], start, end)
     return {"slots": slots}
