@@ -90,8 +90,8 @@ def handle_retell_post_call(payload: dict, client: dict):
         return
 
     photo_upload_url = (
-        f"https://johnc3.app.n8n.cloud/webhook/photo-upload"
-        f"?record_id={record_id}&name={caller_name}&phone={phone}"
+        f"https://tradebeem-engine-production.up.railway.app"
+        f"/upload/{client['client_id']}/{record_id}"
     )
     if phone:
         try:

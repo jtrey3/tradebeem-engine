@@ -50,3 +50,14 @@ def insert_record(url: str, key: str, table: str, fields: dict) -> str:
     client = get_client(url, key)
     resp = client.table(table).insert(fields).execute()
     return resp.data[0]["id"] if resp.data else None
+
+
+def upload_photo(url: str, key: str, bucket: str, path: str, data: bytes, content_type: str) -> str:
+    """Upload a file to Supabase Storage. Returns the public URL."""
+    client = get_client(url, key)
+    try:
+        client.storage.create_bucket(bucket, options={"public": True})
+    except Exception:
+        pass  # Bucket already exists
+    client.storage.from_(bucket).upload(path, data, {"content-type": content_type, "upsert": "true"})
+    return client.storage.from_(bucket).get_public_url(path)

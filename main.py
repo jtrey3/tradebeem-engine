@@ -19,7 +19,9 @@ from handlers.poller import (
 from handlers.webhook import handle_retell_post_call
 from handlers.cal import get_available_slots, create_booking
 from core.activity import get_activity, get_counts
-from core.supabase_db import get_raw_records, update_record
+from core.supabase_db import get_raw_records, update_record, upload_photo
+from fastapi import UploadFile, File
+from typing import List
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -391,6 +393,59 @@ async def send_photo_link(client_id: str, request: Request):
     except Exception as e:
         logger.error(f"[{client_id}] Photo link SMS failed: {e}")
         return {"status": "failed", "error": str(e)}
+
+
+# ── Photo Upload ───────────────────────────────────────────────────────────────
+
+@app.get("/upload/{client_id}/{record_id}", response_class=HTMLResponse)
+def upload_page(client_id: str, record_id: str, request: Request):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Not found")
+    return templates.TemplateResponse("upload.html", {
+        "request": request,
+        "shop_name": client["name"],
+        "success": False,
+        "error": None,
+    })
+
+
+@app.post("/upload/{client_id}/{record_id}", response_class=HTMLResponse)
+async def upload_photos(client_id: str, record_id: str, request: Request,
+                        photos: List[UploadFile] = File(...)):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Not found")
+    sb = client["supabase"]
+    urls = []
+    try:
+        for photo in photos:
+            if not photo.filename:
+                continue
+            data = await photo.read()
+            path = f"{client_id}/{record_id}/{photo.filename}"
+            url = upload_photo(sb["url"], sb["key"], "photos", path, data, photo.content_type or "image/jpeg")
+            urls.append(url)
+        if urls:
+            update_record(sb["url"], sb["key"], sb["table"], record_id, {
+                "photo_uploaded": "Yes",
+                "photo_urls": ", ".join(urls),
+            })
+            logger.info(f"[{client_id}] {len(urls)} photo(s) uploaded for record {record_id}")
+        return templates.TemplateResponse("upload.html", {
+            "request": request,
+            "shop_name": client["name"],
+            "success": True,
+            "error": None,
+        })
+    except Exception as e:
+        logger.error(f"[{client_id}] Photo upload failed: {e}")
+        return templates.TemplateResponse("upload.html", {
+            "request": request,
+            "shop_name": client["name"],
+            "success": False,
+            "error": str(e),
+        })
 
 
 # ── Webhook endpoints ──────────────────────────────────────────────────────────
