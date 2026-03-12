@@ -93,19 +93,24 @@ def handle_retell_post_call(payload: dict, client: dict):
         f"https://tradebeem-engine-production.up.railway.app"
         f"/upload/{client['client_id']}/{record_id}"
     )
-    if phone:
+    if email:
         try:
-            send_sms(
-                twilio["account_sid"], twilio["auth_token"], twilio["from_number"],
-                phone,
-                f"Hey {first_name}, thanks for calling {client['name']}! "
-                f"Here's a link to upload any photos of your truck or dash codes — "
-                f"it helps our team get a head start: {photo_upload_url} "
-                f"We'll be in touch shortly."
+            send_email(
+                to=email,
+                subject=f"Thanks for calling {client['name']} — Upload Your Photos Here",
+                body=(
+                    f"Hey {first_name},\n\n"
+                    f"Thanks for calling {client['name']}! To help our team get a head start, "
+                    f"you can upload any photos of your truck, dash codes, or anything relevant here:\n\n"
+                    f"{photo_upload_url}\n\n"
+                    f"We'll be in touch shortly.\n\n"
+                    f"— {client['name']}"
+                ),
+                sender_email=client["gmail_sender"]
             )
-            logger.info(f"[{client['client_id']}] Photo upload SMS sent to {phone}")
+            logger.info(f"[{client['client_id']}] Photo upload email sent to {email}")
         except Exception as e:
-            logger.error(f"[{client['client_id']}] Photo upload SMS failed: {e}")
+            logger.error(f"[{client['client_id']}] Photo upload email failed: {e}")
 
     urgency_flag = " 🚨 TRUCK DOWN" if urgency in ("truck_down", "emergency") else ""
     try:
