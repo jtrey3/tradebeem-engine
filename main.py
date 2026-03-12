@@ -255,6 +255,13 @@ def leads_update(
     sb = client["supabase"]
     fields = {"status": status, "work_performed": work_performed, "declined_work": declined_work}
     update_record(sb["url"], sb["key"], sb["table"], record_id, fields)
+
+    # Trigger automations immediately on save instead of waiting for next poll
+    run_pickup_notification(client)
+    run_complete_notification(client)
+    run_google_review(client)
+    run_declined_followup(client)
+
     return RedirectResponse(f"/clients/{client_id}/leads", status_code=303)
 
 
