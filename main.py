@@ -280,8 +280,20 @@ async def cal_slots(client_id: str, request: Request):
             params.update(body)
         except Exception:
             pass
-    start = params.get("start")
-    end = params.get("end")
+
+    # Accept either explicit start/end or a single date (sent by Retell agent)
+    start = params.get("start") or ""
+    end = params.get("end") or ""
+    date = params.get("date") or ""
+    if date and (not start or not end):
+        start = f"{date}T00:00:00Z"
+        end = f"{date}T23:59:59Z"
+
+    logger.info(f"[{client_id}] cal/slots called with start={start} end={end} date={date}")
+
+    if not start or not end:
+        return {"slots": [], "error": "date or start/end required"}
+
     cal = client.get("cal", {})
     slots = get_available_slots(cal["api_key"], cal["event_type_id"], start, end)
     return {"slots": slots}
