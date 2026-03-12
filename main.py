@@ -18,6 +18,7 @@ from handlers.poller import (
 )
 from handlers.webhook import handle_retell_post_call
 from core.activity import get_activity, get_counts
+from core.supabase_db import get_raw_records, update_record
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -222,6 +223,39 @@ def add_client(
     logger.info(f"New client added via dashboard: {client_id}")
 
     return RedirectResponse("/", status_code=303)
+
+
+# ── Leads CRM ──────────────────────────────────────────────────────────────────
+
+@app.get("/clients/{client_id}/leads", response_class=HTMLResponse)
+def leads_view(client_id: str, request: Request):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    sb = client["supabase"]
+    records = get_raw_records(sb["url"], sb["key"], sb["table"])
+    return templates.TemplateResponse("leads.html", {
+        "request": request,
+        "client": client,
+        "records": records,
+    })
+
+
+@app.post("/clients/{client_id}/leads/update")
+def leads_update(
+    client_id: str,
+    record_id: str = Form(...),
+    status: str = Form(default=""),
+    work_performed: str = Form(default=""),
+    declined_work: str = Form(default=""),
+):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    sb = client["supabase"]
+    fields = {"status": status, "work_performed": work_performed, "declined_work": declined_work}
+    update_record(sb["url"], sb["key"], sb["table"], record_id, fields)
+    return RedirectResponse(f"/clients/{client_id}/leads", status_code=303)
 
 
 # ── Webhook endpoints ──────────────────────────────────────────────────────────

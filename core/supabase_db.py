@@ -56,6 +56,13 @@ def update_record(url: str, key: str, table: str, record_id: str, fields: dict):
     client.table(table).update(mapped).eq("id", record_id).execute()
 
 
+def get_raw_records(url: str, key: str, table: str) -> list:
+    """Return all records as raw dicts, ordered by timestamp desc."""
+    client = get_client(url, key)
+    resp = client.table(table).select("*").order("timestamp", desc=True).execute()
+    return resp.data or []
+
+
 def insert_record(url: str, key: str, table: str, fields: dict) -> str:
     """Insert a new record, return the new row id."""
     client = get_client(url, key)

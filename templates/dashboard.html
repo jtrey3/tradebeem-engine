@@ -70,8 +70,12 @@
               <div class="font-semibold text-white text-lg">{{ client.name }}</div>
               <div class="text-gray-500 text-sm">{{ client.client_id }} · {{ client.phone }}</div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
               <span class="text-xs bg-gray-800 text-gray-300 px-3 py-1 rounded-full">{{ client.automations|length }} automations</span>
+              <a href="/clients/{{ client.client_id }}/leads"
+                class="text-xs bg-brand text-white px-3 py-1 rounded-full hover:bg-orange-600 transition">
+                View Leads
+              </a>
             </div>
           </div>
 
@@ -186,8 +190,8 @@
             </div>
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="text-sm">📋</span>
-                <span class="text-sm text-gray-300">Airtable</span>
+                <span class="text-sm">🗄️</span>
+                <span class="text-sm text-gray-300">Supabase</span>
               </div>
               <span class="text-xs bg-green-900 text-green-400 px-2 py-0.5 rounded-full">Active</span>
             </div>
