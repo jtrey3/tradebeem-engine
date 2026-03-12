@@ -17,6 +17,7 @@ from handlers.poller import (
     run_declined_followup,
 )
 from handlers.webhook import handle_retell_post_call
+from handlers.cal import get_available_slots, create_booking
 from core.activity import get_activity, get_counts
 from core.supabase_db import get_raw_records, update_record
 
@@ -263,6 +264,37 @@ def leads_update(
     run_declined_followup(client)
 
     return RedirectResponse(f"/clients/{client_id}/leads", status_code=303)
+
+
+# ── Cal.com Tools (called by Retell agent during live calls) ───────────────────
+
+@app.get("/tools/{client_id}/cal/slots")
+def cal_slots(client_id: str, start: str, end: str):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    cal = client.get("cal", {})
+    slots = get_available_slots(cal["api_key"], cal["event_type_id"], start, end)
+    return {"slots": slots}
+
+
+@app.post("/tools/{client_id}/cal/book")
+async def cal_book(client_id: str, request: Request):
+    client = next((c for c in CLIENTS if c["client_id"] == client_id), None)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    body = await request.json()
+    cal = client.get("cal", {})
+    booking = create_booking(
+        cal["api_key"],
+        cal["event_type_id"],
+        body["start"],
+        body["name"],
+        body["email"],
+        body.get("timezone", "America/Chicago"),
+    )
+    logger.info(f"[{client_id}] Cal.com booking created: {booking.get('uid')}")
+    return {"status": "booked", "booking": booking}
 
 
 # ── Webhook endpoints ──────────────────────────────────────────────────────────

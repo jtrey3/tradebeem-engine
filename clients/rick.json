@@ -15,6 +15,10 @@
     "auth_token": "TK938dea6bd5dbd1627d3347b393ccc019",
     "from_number": "+13613137621"
   },
+  "cal": {
+    "api_key": "cal_live_effe6701c08a9c88078003f5d360c866",
+    "event_type_id": 4894414
+  },
   "gmail_sender": "tyb.447@gmail.com",
   "automations": {
     "pickup_notification": {
