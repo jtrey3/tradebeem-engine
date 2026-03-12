@@ -1,0 +1,47 @@
+{
+  "client_id": "rick",
+  "name": "Rick's Diesel Truck Repair",
+  "phone": "+13613137621",
+  "owner_phone": "+18179480388",
+  "owner_email": "tyb.447@gmail.com",
+  "google_review_link": "https://www.google.com/maps/place/Ricks+Diesel+Truck+Repair+LLC/@32.6048961,-97.2213341,17.03z/data=!4m6!3m5!1s0x864e8777382d4321:0x56c580a33dc9cbbc!8m2!3d32.6049026!4d-97.2187391!16s%2Fg%2F11ptlhg1kx?entry=ttu&g_ep=EgoyMDI2MDMwOS4wIKXMDSoASAFQAw%3D%3D",
+  "supabase": {
+    "url": "https://vmwuanvjamzxqsbbtzbe.supabase.co",
+    "key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtd3VhbnZqYW16eHFzYmJ0emJlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzI4MDQ1NCwiZXhwIjoyMDg4ODU2NDU0fQ.8X8_xyDArDK4YdSlnF88v85jwGnu20If5qUoJnpygko",
+    "table": "rick_leads"
+  },
+  "twilio": {
+    "account_sid": "ACea6aef4f4c8e842fe00899f821d7aa42",
+    "auth_token": "TK938dea6bd5dbd1627d3347b393ccc019",
+    "from_number": "+13613137621"
+  },
+  "gmail_sender": "tyb.447@gmail.com",
+  "automations": {
+    "pickup_notification": {
+      "enabled": true,
+      "poll_interval_seconds": 120,
+      "trigger_status": "Ready For Pickup",
+      "sent_flag": "pickup_notification_sent"
+    },
+    "complete_notification": {
+      "enabled": true,
+      "poll_interval_seconds": 120,
+      "trigger_status": "Complete",
+      "sent_flag": "complete_notification_sent"
+    },
+    "google_review": {
+      "enabled": true,
+      "poll_interval_seconds": 300,
+      "trigger_status": "Complete",
+      "required_field": "work_performed",
+      "sent_flag": "review_requested"
+    },
+    "declined_followup": {
+      "enabled": true,
+      "poll_interval_seconds": 300,
+      "trigger_status": "Complete",
+      "required_field": "declined_work",
+      "sent_flag": "declined_followup_sent"
+    }
+  }
+}

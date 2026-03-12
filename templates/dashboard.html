@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradeBeem Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: '#f97316' }
+        }
+      }
+    }
+  </script>
+  <style>
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-brand font-bold text-xl tracking-tight">TradeBeem</span>
+      <span class="text-gray-500 text-sm">Engine</span>
+    </div>
+    <div class="flex items-center gap-2 text-sm text-gray-400">
+      <span class="status-dot bg-green-400 pulse"></span>
+      <span>Running</span>
+      <span class="ml-4 text-gray-600">{{ current_time }}</span>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-8 py-8 space-y-8">
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-4 gap-4">
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-gray-400 text-xs uppercase tracking-widest mb-1">Clients</div>
+        <div class="text-3xl font-bold text-white">{{ clients|length }}</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-gray-400 text-xs uppercase tracking-widest mb-1">Active Jobs</div>
+        <div class="text-3xl font-bold text-white">{{ jobs|length }}</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-gray-400 text-xs uppercase tracking-widest mb-1">Fired Today</div>
+        <div class="text-3xl font-bold text-brand">{{ fired_today }}</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-gray-400 text-xs uppercase tracking-widest mb-1">Errors Today</div>
+        <div class="text-3xl font-bold {% if errors_today > 0 %}text-red-400{% else %}text-green-400{% endif %}">{{ errors_today }}</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-8">
+
+      <!-- Left: Clients + Automations -->
+      <div class="col-span-2 space-y-6">
+
+        {% for client in clients %}
+        <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <!-- Client Header -->
+          <div class="px-6 py-4 flex items-center justify-between border-b border-gray-800">
+            <div>
+              <div class="font-semibold text-white text-lg">{{ client.name }}</div>
+              <div class="text-gray-500 text-sm">{{ client.client_id }} · {{ client.phone }}</div>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-xs bg-gray-800 text-gray-300 px-3 py-1 rounded-full">{{ client.automations|length }} automations</span>
+            </div>
+          </div>
+
+          <!-- Automations Table -->
+          <div class="divide-y divide-gray-800">
+            {% for name, auto in client.automations.items() %}
+            <div class="px-6 py-3 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="status-dot {% if auto.enabled %}bg-green-400{% else %}bg-gray-600{% endif %}"></span>
+                <div>
+                  <div class="text-sm font-medium text-gray-200">{{ name | replace('_', ' ') | title }}</div>
+                  <div class="text-xs text-gray-500">
+                    Trigger: {{ auto.trigger_status }} · Every {{ auto.poll_interval_seconds }}s
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-500">{{ auto.sent_flag }}</span>
+                <form method="POST" action="/dashboard/toggle">
+                  <input type="hidden" name="client_id" value="{{ client.client_id }}" />
+                  <input type="hidden" name="automation" value="{{ name }}" />
+                  <button type="submit"
+                    class="text-xs px-3 py-1 rounded-full border transition
+                      {% if auto.enabled %}border-green-600 text-green-400 hover:bg-green-900{% else %}border-gray-600 text-gray-400 hover:bg-gray-800{% endif %}">
+                    {% if auto.enabled %}ON{% else %}OFF{% endif %}
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Scheduled Jobs for this client -->
+          <div class="px-6 py-3 bg-gray-950 border-t border-gray-800">
+            <div class="text-xs text-gray-500 mb-2 uppercase tracking-widest">Next runs</div>
+            <div class="flex flex-wrap gap-2">
+              {% for job in jobs %}
+              {% if job.id.startswith(client.client_id) %}
+              <span class="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded">
+                {{ job.id.replace(client.client_id + '_', '') | replace('_', ' ') }}
+                <span class="text-gray-500 ml-1">{{ job.next_run }}</span>
+              </span>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Add Client Card -->
+        <div class="bg-gray-900 rounded-xl border border-dashed border-gray-700 p-6">
+          <div class="text-center">
+            <div class="text-gray-500 text-sm mb-3">Add a new client to the engine</div>
+            <button onclick="document.getElementById('add-client-modal').classList.remove('hidden')"
+              class="bg-brand text-white text-sm px-4 py-2 rounded-lg hover:bg-orange-600 transition">
+              + Add Client
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Activity Feed -->
+      <div class="space-y-4">
+        <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+            <div class="font-semibold text-white">Activity</div>
+            <span class="text-xs text-gray-500">Last 50 events</span>
+          </div>
+          <div class="divide-y divide-gray-800 max-h-[600px] overflow-y-auto">
+            {% if activity %}
+              {% for event in activity %}
+              <div class="px-5 py-3">
+                <div class="flex items-start gap-2">
+                  <span class="status-dot mt-1.5 flex-shrink-0
+                    {% if event.level == 'ERROR' %}bg-red-400
+                    {% elif event.level == 'WARN' %}bg-yellow-400
+                    {% else %}bg-green-400{% endif %}">
+                  </span>
+                  <div>
+                    <div class="text-xs text-gray-200">{{ event.message }}</div>
+                    <div class="text-xs text-gray-600 mt-0.5">{{ event.time }} · {{ event.client }}</div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="px-5 py-8 text-center text-gray-600 text-sm">No activity yet</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Integrations Panel -->
+        <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-800">
+            <div class="font-semibold text-white">Integrations</div>
+          </div>
+          <div class="px-5 py-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">📧</span>
+                <span class="text-sm text-gray-300">Gmail SMTP</span>
+              </div>
+              <span class="text-xs bg-green-900 text-green-400 px-2 py-0.5 rounded-full">Active</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">💬</span>
+                <span class="text-sm text-gray-300">Twilio SMS</span>
+              </div>
+              <span class="text-xs bg-yellow-900 text-yellow-400 px-2 py-0.5 rounded-full">Pending</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">📋</span>
+                <span class="text-sm text-gray-300">Airtable</span>
+              </div>
+              <span class="text-xs bg-green-900 text-green-400 px-2 py-0.5 rounded-full">Active</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">📞</span>
+                <span class="text-sm text-gray-300">Retell AI</span>
+              </div>
+              <span class="text-xs bg-green-900 text-green-400 px-2 py-0.5 rounded-full">Active</span>
+            </div>
+            <div class="border-t border-gray-800 pt-3">
+              <button class="text-xs text-gray-500 hover:text-brand transition">+ Add integration</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Client Modal -->
+  <div id="add-client-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div class="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-lg p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div class="font-semibold text-white text-lg">Add New Client</div>
+        <button onclick="document.getElementById('add-client-modal').classList.add('hidden')"
+          class="text-gray-500 hover:text-white text-xl">&times;</button>
+      </div>
+      <form method="POST" action="/dashboard/add-client" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Client ID</label>
+            <input name="client_id" placeholder="e.g. ricks_diesel" required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Business Name</label>
+            <input name="name" placeholder="Rick's Diesel Truck Repair" required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Shop Phone</label>
+            <input name="phone" placeholder="+1..." required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Owner Phone</label>
+            <input name="owner_phone" placeholder="+1..." required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+          </div>
+        </div>
+        <div class="border-t border-gray-800 pt-3">
+          <div class="text-xs text-gray-400 uppercase tracking-widest mb-2">Airtable</div>
+          <div class="grid grid-cols-2 gap-3">
+            <input name="airtable_base_id" placeholder="Base ID (appXXX)" required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+            <input name="airtable_table_id" placeholder="Table ID (tblXXX)" required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+          </div>
+          <input name="airtable_token" placeholder="Airtable Token (patXXX)" required
+            class="w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+        </div>
+        <div class="border-t border-gray-800 pt-3">
+          <div class="text-xs text-gray-400 uppercase tracking-widest mb-2">Twilio</div>
+          <div class="grid grid-cols-2 gap-3">
+            <input name="twilio_sid" placeholder="Account SID (ACxxx)" required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+            <input name="twilio_token" placeholder="Auth Token"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+          </div>
+          <input name="twilio_from" placeholder="Twilio From Number (+1...)" required
+            class="w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+        </div>
+        <div class="border-t border-gray-800 pt-3">
+          <div class="text-xs text-gray-400 uppercase tracking-widest mb-2">Gmail</div>
+          <input name="gmail_sender" placeholder="sender@gmail.com" required
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand" />
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="document.getElementById('add-client-modal').classList.add('hidden')"
+            class="text-sm text-gray-400 hover:text-white px-4 py-2">Cancel</button>
+          <button type="submit"
+            class="bg-brand text-white text-sm px-5 py-2 rounded-lg hover:bg-orange-600 transition">
+            Add Client
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Auto-refresh every 30s -->
+  <script>setTimeout(() => location.reload(), 30000)</script>
+</body>
+</html>
